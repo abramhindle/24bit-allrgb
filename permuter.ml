@@ -61,6 +61,10 @@ let rgb_of_int i =
      b = ((i land 16777215) lsr 16)}
 ;;
 
+let int_of_rgb rgb =
+  rgb.r + (rgb.g lsl 8) + (rgb.b lsl 16)
+;;
+
 let rgb_of_palette_index p i =
   rgb_of_int (p.(i))
 ;;
@@ -147,6 +151,27 @@ let calculate_color_distance  blocksize input_colors palette_colors matrix =
   matrix
 ;;      
 
+
+let map_palette_to_allrgb img =
+  let pixel_tuples = Array.init drange 
+    (fun i ->
+       let y = i / dwidth in
+       let x = i mod dwidth in
+         (int_of_rgb (img#get x y), x, y))
+  in
+  let pixel_tuples = fisher_yates_shuffle pixel_tuples in
+    Array.sort compare pixel_tuples;
+    let palette = Array.create drange 0 in
+      for i = 0 to drange - 1 do
+        let (_,x,y) = pixel_tuples.(i) in
+          (* i is color x y is location *)
+          palette.(y * dwidth + x) <- i
+      done;
+      palette
+;;
+
+
+
 let permuter input_image blocksize start len =
   assert(blocksize <= dwidth);
   assert(dwidth mod blocksize = 0);
@@ -163,7 +188,8 @@ let permuter input_image blocksize start len =
     let colors = Array.create dwidth {r = 0 ; g =0 ; b =0} in
     let bcolors =  Array.create blocksize { r = 0; g = 0; b = 0 } in
     let line_colors = Array.create blocksize { r = 0; g = 0; b = 0 } in
-    let palette = random_palette () in
+    (* let palette = random_palette () in *)
+    let palette = map_palette_to_allrgb img in
     let distance_matrix = Array.make_matrix blocksize blocksize 0.0 in
       for i = start to (start + len - 1) do
         status ("Line "^(string_of_int i));
@@ -201,7 +227,7 @@ let dispatch_from_cmdline () =
             let start = (int_of_string start) in
             let len   = dwidth - start in
               permuter (List.hd files) blocksize start len
-        | (filename::blocksize::start::len::xs) ->
+        | (filename::blocksize::start::len::[]) ->
             let blocksize = (int_of_string blocksize) in
             let start = (int_of_string start) in
             let len   = (int_of_string len) in
