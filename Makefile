@@ -5,14 +5,14 @@ LINKOPT=$(LINKFLAGS_CAMLIMAGES) -I `ocamlfind query camlimages`
 munkres.cmx: munkres.ml
 	ocamlopt.opt -c munkres.ml
 
-permuter: permuter_driver.ml permuter.cmx munkres.cmx
-	ocamlopt.opt -o permuter ${COMPFLAGS} ${LINKOPT} munkres.cmx permuter.cmx permuter_driver.ml
+permuter: permuter_driver.ml permuter.cmx munkres.cmx hilbert.cmx
+	ocamlopt.opt -o permuter ${COMPFLAGS} ${LINKOPT} munkres.cmx hilbert.cmx permuter.cmx permuter_driver.ml
 
-permuter.cmx: permuter.ml munkres.cmx
-	ocamlopt.opt ${COMPFLAGS} munkres.cmx -c permuter.ml
+permuter.cmx: permuter.ml munkres.cmx hilbert.cmx
+	ocamlopt.opt ${COMPFLAGS} munkres.cmx hilbert.cmx -c permuter.ml
 
-verify: verify.ml permuter.cmx munkres.cmx
-	ocamlopt.opt -o verify ${COMPFLAGS} ${LINKOPT} munkres.cmx permuter.cmx verify.ml
+verify: verify.ml permuter.cmx munkres.cmx hilbert.cmx
+	ocamlopt.opt -o verify ${COMPFLAGS} ${LINKOPT} munkres.cmx hilbert.cmx permuter.cmx verify.ml
 
 hilbert.cmx: hilbert.ml
 	ocamlopt.opt ${COMPFLAGS} -c hilbert.ml
@@ -32,4 +32,7 @@ vtest: permuter
 
 bigtest: permuter
 	./permuter circles.png 8 0 4096
+
+bigvtest: permuter
+	./permuter valentines.png 8 0 4096
 

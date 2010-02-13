@@ -57,18 +57,23 @@ let arr_of_line img line =
 ;;
 
 let rgb_of_int i =
-  {  r = (i land 255); 
-     g = ((i land 65535) lsr 8); 
-     b = ((i land 16777215) lsr 16)}
+  { r = ((i land 16777215) lsr 16); 
+    g = ((i land 65535) lsr 8); 
+    b = (i land 255); }
+     
 ;;
 
 let int_of_rgb rgb =
-  rgb.r + (rgb.g * 256) + (rgb.b * 65536)
+  rgb.b + (rgb.g * 256) + (rgb.r * 65536)
 ;;
 
 let int_of_rgb_tuple (r,g,b) =
-  r + (g * 256) + (b * 65536)
+  b + (g * 256) + (r * 65536)
 ;;
+let int_of_rgb_raw r g b =
+  b + (g * 256) + (r * 65536)
+;;
+
 
 let rgb_of_palette_index p i =
   rgb_of_int (p.(i))
@@ -217,8 +222,8 @@ let map_palette_to_allrgb img =
     let palette = Array.create drange 0 in
       for i = 0 to drange - 1 do
         let (h,x,y) = pixel_tuples.(i) in
-        let rgbt = Hilbert.hindex_inverse 8 i in
-        let j = int_of_rgb rgbt in
+        let rgba = Hilbert.hindex_inverse 8 i in
+        let j = int_of_rgb_raw rgba.(0) rgba.(1) rgba.(2) in
           (* j is the hilbert color of the x y location *)
           palette.(y * dwidth + x) <- j (* i *) (* i is color x y is location *)
       done;
@@ -278,7 +283,7 @@ let permuter input_image blocksize start len =
               for k = 0 to blocksize - 1 do
               (* ok now we we take the mappings from p1 and find which colors best match *)
               (* I hope this isn't backwards *)
-                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p1.(k)))
+                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p2.(k)))
               done;
           done;
       done;
