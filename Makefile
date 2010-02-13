@@ -5,9 +5,20 @@ LINKOPT=$(LINKFLAGS_CAMLIMAGES) -I `ocamlfind query camlimages`
 munkres.cmx: munkres.ml
 	ocamlopt.opt -c munkres.ml
 
-permuter: permuter.ml munkres.cmx
-	ocamlopt.opt -o permuter ${COMPFLAGS} ${LINKOPT} munkres.cmx permuter.ml
+permuter: permuter_driver.ml permuter.cmx munkres.cmx
+	ocamlopt.opt -o permuter ${COMPFLAGS} ${LINKOPT} munkres.cmx permuter.cmx permuter_driver.ml
 
+permuter.cmx: permuter.ml munkres.cmx
+	ocamlopt.opt ${COMPFLAGS} munkres.cmx -c permuter.ml
+
+verify: verify.ml permuter.cmx munkres.cmx
+	ocamlopt.opt -o verify ${COMPFLAGS} ${LINKOPT} munkres.cmx permuter.cmx verify.ml
+
+hilbert.cmx: hilbert.ml
+	ocamlopt.opt ${COMPFLAGS} -c hilbert.ml
+
+vtest: permuter
+	./permuter valentines.png 32 0 32
 test: permuter
 	./permuter fp1.jpg 32 0 32
 ctest: permuter

@@ -11,6 +11,7 @@
 open Munkres;;
 open Images;;
 open OImages;;
+open Hilbert;;
 
 let status str =
   prerr_endline ("[ permuter ] "^str)
@@ -62,7 +63,11 @@ let rgb_of_int i =
 ;;
 
 let int_of_rgb rgb =
-  rgb.r + (rgb.g * 256) + (rgb.b * 65535)
+  rgb.r + (rgb.g * 256) + (rgb.b * 65536)
+;;
+
+let int_of_rgb_tuple (r,g,b) =
+  r + (g * 256) + (b * 65536)
 ;;
 
 let rgb_of_palette_index p i =
@@ -122,6 +127,46 @@ let random_palette () =
     fisher_yates_shuffle palette
 ;;
 
+let verify_image img =
+  let found = Array.create drange false  in
+  for y = 0 to dheight - 1 do
+    for x = 0 to dwidth - 1 do
+      found.(int_of_rgb (img#get x y)) <- true;
+    done;
+  done;
+    let rec helper i =
+      if (i >= drange) then
+        true
+      else
+        if (found.(i)) then
+          helper (i + 1)
+        else
+          false
+    in
+      helper 0 
+;;
+let missing_color_report img =
+  let found = Array.create drange 0  in
+  for y = 0 to dheight - 1 do
+    for x = 0 to dwidth - 1 do
+      let i = int_of_rgb (img#get x y) in 
+      found.(i) <- found.(i) + 1;
+    done;
+  done;
+    let rec helper i =
+      if (i >= drange) then
+        ()
+      else
+        if (found.(i) = 1) then
+          helper (i + 1)
+        else
+          ( prerr_endline ("Color "^(string_of_int i)^" was found "^(string_of_int found.(i))^" times!");
+            helper (i + 1))
+
+    in
+      helper 0 
+
+
 let rgb_to_yuv rgb =
   let red = rgb.r in
   let blue = rgb.b in
@@ -151,6 +196,9 @@ let calculate_color_distance  blocksize input_colors palette_colors matrix =
   matrix
 ;;      
 
+let tuple_of_rgb r =
+  (r.r, r.g, r.b)
+;;
 
 let map_palette_to_allrgb img =
   status ("[map_palette_to_allrgb] making the tuples");
@@ -159,7 +207,8 @@ let map_palette_to_allrgb img =
     (fun i ->
        let y = i / dwidth in
        let x = i mod dwidth in
-         (int_of_rgb (img#get x y), x, y))
+         ((Hilbert.hindex 8 (tuple_of_rgb (img#get x y))), x , y))
+           (*(int_of_rgb (img#get x y), x, y)) *)
   in
   let pixel_tuples = fisher_yates_shuffle pixel_tuples in
     status ("[map_palette_to_allrgb] sorting the tuples");
@@ -167,9 +216,11 @@ let map_palette_to_allrgb img =
     status ("[map_palette_to_allrgb] mapping the tuples");
     let palette = Array.create drange 0 in
       for i = 0 to drange - 1 do
-        let (_,x,y) = pixel_tuples.(i) in
-          (* i is color x y is location *)
-          palette.(y * dwidth + x) <- i
+        let (h,x,y) = pixel_tuples.(i) in
+        let rgbt = Hilbert.hindex_inverse 8 i in
+        let j = int_of_rgb rgbt in
+          (* j is the hilbert color of the x y location *)
+          palette.(y * dwidth + x) <- j (* i *) (* i is color x y is location *)
       done;
       status ("[map_palette_to_allrgb] done");
       palette
@@ -254,9 +305,30 @@ let dispatch_from_cmdline () =
             let start = (int_of_string start) in
             let len   = (int_of_string len) in
               permuter (List.hd files) blocksize start len
-        
+                
 ;;
-  
 
-dispatch_from_cmdline ();;         
+(* dispatch_from_cmdline ();;            *)
+
+
       
+let verify_from_cmdline () =
+  Random.init 666;
+  let files = ref [] in
+    Arg.parse [] (fun s -> files := s :: !files) "edge files";
+    let files = List.rev !files in
+    let rec helper = function
+        [] -> prerr_endline "./verify <input_images>"
+      | (filename::xs) -> 
+          let img = load_rgb_file filename in
+          let _ = 
+            if (verify_image img) then
+              prerr_endline ("File "^filename^" is ok")
+            else
+              ( print_endline ("File "^filename^" DOES NOT HAVE COLORS! ");
+                missing_color_report img)
+          in
+            helper xs
+    in
+      helper files
+;;
