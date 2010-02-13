@@ -1,0 +1,114 @@
+#*********************************************************************#
+#                                                                     #
+#                          Caml Images                                #
+#                                                                     #
+#            François Pessaux, projet Cristal, INRIA Rocquencourt     #
+#            Pierre Weis, projet Cristal, INRIA Rocquencourt          #
+#            Jun Furuse, projet Cristal, INRIA Rocquencourt           #
+#                                                                     #
+#  Copyright 1999-2004,                                               #
+#  Institut National de Recherche en Informatique et en Automatique.  #
+#  Distributed only by permission.                                    #
+#                                                                     #
+#*********************************************************************#
+
+#(* $Id: Makefile.config.in,v 1.28 2004/10/02 15:49:05 weis Exp $ *)
+
+PACKAGE=camlimages
+VERSION=2.2.0
+
+MV=mv -f
+RM=rm -fR
+CP=cp -pfR
+
+CAMLDIR=`ocamlfind printconf stdlib`
+#/usr/lib/ocaml
+LIBDIR=`ocamlfind query calendar`
+
+CAMLC = ocamlc.opt 
+CAMLOPT = ocamlopt.opt 
+CAMLC_LABEL = ocamlc.opt -labels
+CAMLOPT_LABEL = ocamlopt.opt -labels
+CAMLDEP = ocamldep
+CAMLLEX = ocamllex.opt
+CAMLYACC = ocamlyacc
+CAMLMKTOP = ocamlmktop
+CAMLMKLIB = ocamlmklib
+CUSTOM=-custom
+
+SUPPORTED=  bmp ppm gif png jpeg tiff xpm freetype(2) ps
+
+SUPPORT_GIF=true
+SUPPORT_PNG=true
+SUPPORT_JPEG=true
+SUPPORT_TIFF=true
+SUPPORT_FREETYPE=true
+SUPPORT_FREETYPE2=true
+SUPPORT_PS=true
+SUPPORT_LABLGTK=false
+SUPPORT_GDKPIXBUF=
+SUPPORT_LABLGTK2=false
+
+LIBGIF=-lgif
+LIBBMP=
+LIBJPEG=-ljpeg
+LIBTIFF=-ltiff
+LIBFREETYPE=-L/usr/local/lib -Wl,--rpath -Wl,/usr/local/lib -lfreetype -lz
+LIBPNG=-lpng -lz
+LIBXVTHUMB=
+LIBXPM=-L/usr/X11R6/lib -lXpm
+LIBPPM=
+LIBPS=
+
+CFLAGS=-g -O2
+LDFLAGS=
+X_CFLAGS= -I/usr/X11R6/include
+
+INCLUDE_FREETYPE=-I/usr/local/include/freetype2 -I/usr/local/include
+
+LABLGTKDIR=.
+LABLGTK2DIR=
+
+RANLIB=ranlib
+
+LIBPREFIX =	ci_
+
+WITH_UNIX=	unix.cmxa
+
+WITH_CORELIB  = $(LIBPREFIX)core.cmxa
+
+WITH_GRAPHICS =	graphics.cmxa $(LIBPREFIX)graphics.cmxa
+
+WITH_GIF = 	$(LIBPREFIX)gif.cmxa
+
+WITH_JPEG =	$(LIBPREFIX)jpeg.cmxa
+
+WITH_TIFF =	$(LIBPREFIX)tiff.cmxa
+
+WITH_XPM =	$(LIBPREFIX)xpm.cmxa
+
+WITH_BMP =	$(LIBPREFIX)bmp.cmxa
+
+WITH_PPM =	$(LIBPREFIX)ppm.cmxa
+
+WITH_XVTHUMB=	$(LIBPREFIX)xvthumb.cmxa
+
+WITH_PNG =	$(LIBPREFIX)png.cmxa
+
+WITH_PS =	$(LIBPREFIX)ps.cmxa
+
+WITH_FREETYPE=	$(LIBPREFIX)freetype.cmxa
+
+WITH_CAMLIMAGES = $(WITH_CORELIB) $(WITH_GRAPHICS) $(WITH_FREETYPE) \
+	$(WITH_GIF) $(WITH_JPEG) $(WITH_TIFF) $(WITH_BMP) $(WITH_PPM) \
+        $(WITH_PNG) $(WITH_XVTHUMB) $(WITH_XPM) $(WITH_PS)
+
+# only lablgtk_img lablgtk2_img is separated from $(WITH_CAMLIMAGES)
+
+WITH_LABLGTKIMAGE = $(LIBPREFIX)lablgtk.cmxa
+WITH_LABLGTK2IMAGE = $(LIBPREFIX)lablgtk2.cmxa
+
+######################################
+
+COMPFLAGS_CAMLIMAGES= -I $(LIBDIR)
+LINKFLAGS_CAMLIMAGES= $(addprefix -ccopt \"-L, $(addsuffix\", $(LIBDIR))) $(WITH_CAMLIMAGES)
