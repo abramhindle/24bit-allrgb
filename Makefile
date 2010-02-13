@@ -13,3 +13,4 @@ test: permuter
 
 bigtest: permuter
 	./permuter fp1.jpg 8 0 4096
+

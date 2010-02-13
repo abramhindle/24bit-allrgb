@@ -118,10 +118,22 @@ let random_palette () =
     fisher_yates_shuffle palette
 ;;
 
+let rgb_to_yuv rgb =
+  let red = rgb.r in
+  let blue = rgb.b in
+  let green = rgb.g in
+  let y = min ((abs (red *  2104 + green * 4130 + blue * 802 + 4096 + 131072)) lsr 13) 235 in
+  let u = min ((abs (red * (-1214) + green * (-2384) + blue * 3598 + 4096 + 1048576)) lsr 13) 240 in
+  let v = min ((abs (red * 3598 + green * (-3013) + blue * (-585) + 4096 + 1048576)) lsr 13) 240 in
+    (y,u,v)
+;;
 
 let color_distance c1 c2 =
   let sqr x = x * x in
-    (sqr (c1.r - c2.r)) + (sqr (c1.g - c2.g)) + (sqr (c1.b - c2.b))
+  let (y1,u1,v1) = rgb_to_yuv c1 in
+  let (y2,u2,v2) = rgb_to_yuv c2 in
+    (sqr (y1 - y2)) + (sqr (u1 - u2)) + (sqr (v1 - v2))
+    (* (sqr (c1.r - c2.r)) + (sqr (c1.g - c2.g)) + (sqr (c1.b - c2.b)) *)
 ;;
 
 
@@ -167,7 +179,7 @@ let permuter input_image blocksize start len =
               for k = 0 to blocksize - 1 do
               (* ok now we we take the mappings from p1 and find which colors best match *)
               (* I hope this isn't backwards *)
-                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p2.(k)))
+                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p1.(k)))
               done;
           done;
       done;
@@ -176,6 +188,7 @@ let permuter input_image blocksize start len =
 ;;
 
 let dispatch_from_cmdline () =
+  Random.init 666;
   let files = ref [] in
     Arg.parse [] (fun s -> files := s :: !files) "edge files";
     let files = List.rev !files in
