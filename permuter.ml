@@ -62,7 +62,7 @@ let rgb_of_int i =
 ;;
 
 let int_of_rgb rgb =
-  rgb.r + (rgb.g lsl 8) + (rgb.b lsl 16)
+  rgb.r + (rgb.g * 256) + (rgb.b * 65535)
 ;;
 
 let rgb_of_palette_index p i =
@@ -153,6 +153,8 @@ let calculate_color_distance  blocksize input_colors palette_colors matrix =
 
 
 let map_palette_to_allrgb img =
+  status ("[map_palette_to_allrgb] making the tuples");
+
   let pixel_tuples = Array.init drange 
     (fun i ->
        let y = i / dwidth in
@@ -160,16 +162,32 @@ let map_palette_to_allrgb img =
          (int_of_rgb (img#get x y), x, y))
   in
   let pixel_tuples = fisher_yates_shuffle pixel_tuples in
-    Array.sort compare pixel_tuples;
+    status ("[map_palette_to_allrgb] sorting the tuples");
+    Array.sort (fun (i,_,_) (j,_,_) -> compare i j) pixel_tuples;
+    status ("[map_palette_to_allrgb] mapping the tuples");
     let palette = Array.create drange 0 in
       for i = 0 to drange - 1 do
         let (_,x,y) = pixel_tuples.(i) in
           (* i is color x y is location *)
           palette.(y * dwidth + x) <- i
       done;
+      status ("[map_palette_to_allrgb] done");
       palette
 ;;
 
+
+let output_palette palette_file_name palette =
+  let oimg = new rgb24 dwidth dheight in
+    for y = 0 to dheight - 1 do
+      let yoff = dwidth * y in
+      for x = 0 to dwidth - 1 do
+        let i = yoff + x in
+          oimg#unsafe_set x y (rgb_of_int (palette.(i)))
+      done;
+    done;
+    oimg#save palette_file_name (Some Png) [];
+    ()
+;;
 
 
 let permuter input_image blocksize start len =
@@ -182,14 +200,18 @@ let permuter input_image blocksize start len =
     assert(img#height = dwidth);
     let n = dwidth / blocksize in
     let output_file_name = input_image ^ "." ^ (string_of_int blocksize) ^"."^ (string_of_int start) ^ "." ^ (string_of_int len) ^ ".png" in
+    let palette_file_name = "palette-of."^input_image ^ "." ^ (string_of_int blocksize) ^"."^ (string_of_int start) ^ "." ^ (string_of_int len) ^ ".png" in
+
       status ("Output file: "^output_file_name);
 
     let oimg = new rgb24 dwidth len in
     let colors = Array.create dwidth {r = 0 ; g =0 ; b =0} in
     let bcolors =  Array.create blocksize { r = 0; g = 0; b = 0 } in
     let line_colors = Array.create blocksize { r = 0; g = 0; b = 0 } in
-    (* let palette = random_palette () in *)
+      (* let palette = random_palette () in *)
+      status ("Generating the palette");
     let palette = map_palette_to_allrgb img in
+      output_palette palette_file_name palette;
     let distance_matrix = Array.make_matrix blocksize blocksize 0.0 in
       for i = start to (start + len - 1) do
         status ("Line "^(string_of_int i));
@@ -205,7 +227,7 @@ let permuter input_image blocksize start len =
               for k = 0 to blocksize - 1 do
               (* ok now we we take the mappings from p1 and find which colors best match *)
               (* I hope this isn't backwards *)
-                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p1.(k)))
+                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p2.(k)))
               done;
           done;
       done;
