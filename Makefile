@@ -10,7 +10,15 @@ permuter: permuter.ml munkres.cmx
 
 test: permuter
 	./permuter fp1.jpg 32 0 32
+ctest: permuter
+	./permuter circles.png 32 0 32
+htest: permuter
+	./permuter hilbert-curve.png 32 0 32
+
+vtest: permuter
+	./permuter valentines.png 32 0 32
+
 
 bigtest: permuter
-	./permuter fp1.jpg 8 0 4096
+	./permuter circles.png 8 0 4096
 
