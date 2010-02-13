@@ -61,16 +61,21 @@ let rgb_of_int i =
      b = ((i land 16777215) lsr 16)}
 ;;
 
+let rgb_of_palette_index p i =
+  rgb_of_int (p.(i))
+;;
+
+
 (* arr is mutated *)
-let get_colors_for_arr blocksize blkn arr =
+let get_colors_for_arr palette blocksize blkn arr =
   for i = 0 to blocksize - 1 do
-    arr.(i) <- rgb_of_int (i * (drange / blocksize) + blkn)
+    arr.(i) <- rgb_of_palette_index palette (i * (drange / blocksize) + blkn)
   done;
   arr
 ;;
 
-let get_colors_for blocksize blkn =
-  get_colors_for_arr blocksize blkn (mkcolorarray blocksize)
+let get_colors_for palette blocksize blkn =
+  get_colors_for_arr palette blocksize blkn (mkcolorarray blocksize)
 ;;
 
 (* j is the block to look at *)
@@ -90,6 +95,29 @@ let get_colors_of_line_arr line blocksize j arr =
     arr
 ;;
 
+let fisher_yates_shuffle arr =
+  let len = Array.length arr in
+  let rec helper n =
+    if (n > 1) then
+      let k = Random.int len in
+      let tmp = arr.(k) in
+        arr.(k) <- arr.(n - 1);
+        arr.(n - 1) <- tmp;
+        helper (n  - 1)
+    else
+      arr
+  in
+    helper len
+;;
+      
+
+let random_palette () =
+  let palette =   Array.init 16777216
+    (fun i -> i)
+  in
+    fisher_yates_shuffle palette
+;;
+
 
 let color_distance c1 c2 =
   let sqr x = x * x in
@@ -97,7 +125,7 @@ let color_distance c1 c2 =
 ;;
 
 
-let calculate_color_distance blocksize input_colors palette_colors matrix =
+let calculate_color_distance  blocksize input_colors palette_colors matrix =
   for y = 0 to blocksize - 1 do
     for x = 0 to blocksize - 1 do
       let d = color_distance input_colors.(x) palette_colors.(y) in
@@ -123,6 +151,7 @@ let permuter input_image blocksize start len =
     let colors = Array.create dwidth {r = 0 ; g =0 ; b =0} in
     let bcolors =  Array.create blocksize { r = 0; g = 0; b = 0 } in
     let line_colors = Array.create blocksize { r = 0; g = 0; b = 0 } in
+    let palette = random_palette () in
     let distance_matrix = Array.make_matrix blocksize blocksize 0.0 in
       for i = start to (start + len - 1) do
         status ("Line "^(string_of_int i));
@@ -130,7 +159,7 @@ let permuter input_image blocksize start len =
         let line = img_line img i colors in
           for j = 0 to (n - 1) do
             (* status ("Block "^(string_of_int j)); *)
-            let palette_colors = get_colors_for_arr blocksize ((i*n) + j) bcolors in
+            let palette_colors = get_colors_for_arr palette blocksize ((i*n) + j) bcolors in
             let line_colors = get_colors_of_line_arr line blocksize j line_colors in
             let distance_matrix = calculate_color_distance blocksize line_colors palette_colors distance_matrix in
             let mask =   munkres distance_matrix in

@@ -484,7 +484,7 @@ let sum_perm_col_order perm costmatrix =
     !sum
 ;;
 
-
+       
 
 let munkres_permutation n costmatrix =
   let cm = Array.make_matrix n n 0.  in
