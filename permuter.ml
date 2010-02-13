@@ -283,7 +283,7 @@ let permuter input_image blocksize start len =
               for k = 0 to blocksize - 1 do
               (* ok now we we take the mappings from p1 and find which colors best match *)
               (* I hope this isn't backwards *)
-                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p2.(k)))
+                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p1.(k)))
               done;
           done;
       done;
