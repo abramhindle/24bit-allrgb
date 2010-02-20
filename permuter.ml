@@ -130,9 +130,11 @@ let rgb_to_yuv rgb =
 
 let color_distance c1 c2 =
   let sqr x = x * x in
+  (sqr (c1.r - c2.r)) + (sqr (c1.g - c2.g)) + (sqr (c1.b - c2.b))
+  (* 
   let (y1,u1,v1) = rgb_to_yuv c1 in
   let (y2,u2,v2) = rgb_to_yuv c2 in
-    4*(sqr (y1 - y2)) + (sqr (u1 - u2)) + (sqr (v1 - v2))
+    4*(sqr (y1 - y2)) + (sqr (u1 - u2)) + (sqr (v1 - v2)) *)
     (* (sqr (c1.r - c2.r)) + (sqr (c1.g - c2.g)) + (sqr (c1.b - c2.b)) *)
 ;;
 
