@@ -132,7 +132,7 @@ let color_distance c1 c2 =
   let sqr x = x * x in
   let (y1,u1,v1) = rgb_to_yuv c1 in
   let (y2,u2,v2) = rgb_to_yuv c2 in
-    (sqr (y1 - y2)) + (sqr (u1 - u2)) + (sqr (v1 - v2))
+    4*(sqr (y1 - y2)) + (sqr (u1 - u2)) + (sqr (v1 - v2))
     (* (sqr (c1.r - c2.r)) + (sqr (c1.g - c2.g)) + (sqr (c1.b - c2.b)) *)
 ;;
 
@@ -160,9 +160,20 @@ let get_colors_via_schedule_arr img schedule start len arr =
     let xy = schedule.(start + i) in
     let x = xy mod dwidth in
     let y = xy / dwidth in
-    arr.(i) <- img#get x y
+      arr.(i) <- img#get x y;
   done;
   arr
+;;
+
+(* arr is a color array *)
+let write_colors_via_schedule_arr img schedule start len arr =
+  for i = 0 to len - 1 do
+    let xy = schedule.(start + i) in
+    let x = xy mod dwidth in
+    let y = xy / dwidth in
+    img#unsafe_set x y arr.(i)
+  done;
+  img
 ;;
 
 
@@ -181,9 +192,9 @@ let scatter_permuter input_image blocksize =
   let img = load_rgb_file input_image in
     assert(img#width = dwidth);
     assert(img#height = dwidth);
-    let n = dwidth / blocksize in
+
     
-    let colors = Array.create dwidth {r = 0 ; g =0 ; b =0} in
+    let colors      = Array.create blocksize {r = 0 ; g =0 ; b =0} in
     let bcolors     = Array.create blocksize { r = 0; g = 0; b = 0 } in
     let line_colors = Array.create blocksize { r = 0; g = 0; b = 0 } in
     (* this initial palette *)
@@ -204,15 +215,18 @@ let scatter_permuter input_image blocksize =
         for i = 0 to n - 1 do
           let palette_colors = get_colors_via_schedule_arr oimg schedule (i*blocksize) blocksize bcolors in
           let line_colors    = get_colors_via_schedule_arr img  schedule (i*blocksize) blocksize line_colors in
-            status ("Block #" ^ (string_of_int n));
+            (if ((i mod dwidth)=0) then
+               status ("Block #" ^ (string_of_int i) ^ " / " ^(string_of_int n))
+             else ());
             let distance_matrix = calculate_color_distance blocksize line_colors palette_colors distance_matrix in
             let mask =   munkres distance_matrix in
             let (p1,p2) = find_stars mask in
               for k = 0 to blocksize - 1 do
-                (* ok now we we take the mappings from p1 and find which colors best match *)
-                (* I hope this isn't backwards *)
-                oimg#unsafe_set ((blocksize * j) + k) (i - start) (palette_colors.(p1.(k)))
+                colors.(k) <- palette_colors.(p1.(k))
               done;
+              (* the schedule is a permutation so we'll never write to the same pixel 
+                 so this mutation is safe *)
+              write_colors_via_schedule_arr oimg schedule (i*blocksize) blocksize colors;
         done;
           status ("Saving: "^output_file_name);
           oimg#save output_file_name (Some Png) [];
@@ -221,12 +235,13 @@ let scatter_permuter input_image blocksize =
 
     let rec helper n img oimg = function
         i when i = n -> oimg
-      | i when i < n -> 
+      | i -> 
           helper n img (random_permute_step i img oimg) (i + 1)
     in
 
-      helper 30 img noise_img 0
+    let _ = helper 30 img noise_img 0 in
 
+      ()
       
 
 ;;
