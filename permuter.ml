@@ -128,14 +128,25 @@ let rgb_to_yuv rgb =
     (y,u,v)
 ;;
 
+let rgb_to_ycbcr rgb =
+  let red = rgb.r in
+  let redf = float_of_int red in
+  let blue = rgb.b in
+  let bluef = float_of_int blue in
+  let green = rgb.g in
+  let greenf = float_of_int green in
+  let y =  int_of_float (0.299 *. redf +. 0.5870 *. greenf +. 0.1140 *. bluef) in
+  let cb = int_of_float (-0.168736 *. redf -. 0.331264 *. greenf +. 0.5000 *. bluef +. 128.0 ) in
+  let cr = int_of_float ( 0.5000 *.  redf -. 0.418688 *. greenf -. 0.081312 *. bluef +. 128.0) in
+    (y,cb,cr)
+;;	
+
+
 let color_distance c1 c2 =
   let sqr x = x * x in
-  (sqr (c1.r - c2.r)) + (sqr (c1.g - c2.g)) + (sqr (c1.b - c2.b))
-  (* 
-  let (y1,u1,v1) = rgb_to_yuv c1 in
-  let (y2,u2,v2) = rgb_to_yuv c2 in
-    4*(sqr (y1 - y2)) + (sqr (u1 - u2)) + (sqr (v1 - v2)) *)
-    (* (sqr (c1.r - c2.r)) + (sqr (c1.g - c2.g)) + (sqr (c1.b - c2.b)) *)
+  let (y1,cb1,cr1) = rgb_to_ycbcr c1 in
+  let (y2,cb2,cr2) = rgb_to_ycbcr c2 in
+    4*(sqr (y1 - y2)) + (sqr (cb1 - cb2)) + (sqr (cr1 - cr2)) 
 ;;
 
 
